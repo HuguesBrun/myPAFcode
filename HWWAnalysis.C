@@ -15,7 +15,7 @@
 #include <math.h>
 #include "GlobalVariables.h"
 #include "MuonEffectiveArea.h"
-
+#include "MuonEffectiveArea.h"
 #if !defined(__CINT__)
 ClassImp(HWWAnalysis);
 #endif
@@ -78,6 +78,7 @@ void HWWAnalysis::Initialise() {
         hfBrem[index] = CreateH1F(Form("hfBrem_%i",index),"",60,-1,5);
         hPt[index] = CreateH1F(Form("hPt_%i",index),"",200,0,200);
         hEta[index] = CreateH1F(Form("hEta_%i",index),"",100,-3.5,3.5);
+        hMassUncut[index] =  CreateH1F(Form("hMassUncut_%i",index),"",100,40,120);
     }
     
     double binX[6] = {0, 0.8, 1.4442, 1.556, 2, 2.5};
@@ -99,6 +100,8 @@ void HWWAnalysis::Initialise() {
     
     theTree = CreateTree("fitter_tree","the tree for Tag and Probe");
     theTree->Branch("mass",          &mass,          "mass/F");
+    theTree->Branch("runNumber",          &runNumber,          "runNumber/I");
+    theTree->Branch("lumiSec",          &lumiSec,          "lumiSec/I");
     theTree->Branch("pt",          &pt,          "pt/F");
     theTree->Branch("absEta",          &absEta,          "absEta/F");
     theTree->Branch("SCeta",          &SCeta,          "SCeta/F");
@@ -117,6 +120,8 @@ void HWWAnalysis::Initialise() {
     theTree->Branch("weight_runB",&weight_runB,"weight_runB/F");
     theTree->Branch("weight_runC",&weight_runC,"weight_runC/F");
     theTree->Branch("weight_runD",&weight_runD,"weight_runD/F");
+    theTree->Branch("weight_runAsingle",&weight_runAsingle,"weight_runAsingle/F");
+    theTree->Branch("weight_runDsingle",&weight_runDsingle,"weight_runDsingle/F");
     theTree->Branch("passTight",          &passTight,          "passTight/I");
     theTree->Branch("passLoose",          &passLoose,          "passLoose/I");
     theTree->Branch("passFO",          &passFO,          "passFO/I");
@@ -125,7 +130,21 @@ void HWWAnalysis::Initialise() {
     theTree->Branch("passFO_BDT",          &passFO_BDT,          "passFO_BDT/I");
     theTree->Branch("passFO_ISO",          &passFO_ISO,          "passFO_ISO/I");
     theTree->Branch("passFO_BDT_ISO",          &passFO_BDT_ISO,          "passFO_BDT_ISO/I");
+    theTree->Branch("passBDT_ISO",          &passBDT_ISO,          "passBDT_ISO/I");
+    theTree->Branch("passNM1IP",          &passNM1IP,          "passNM1IP/I");
+    theTree->Branch("passNM1presel",          &passNM1presel,          "passNM1presel/I");
+    theTree->Branch("passNM1convs",          &passNM1convs,          "passNM1convs/I");
+    theTree->Branch("passAllNoIsoDet",          &passAllNoIsoDet,          "passAllNoIsoDet/I");
+    theTree->Branch("trigSingle",          &trigSingle,          "trigSingle/I");
+    theTree->Branch("trigDoubleLeg0",          &trigDoubleLeg0,          "trigDoubleLeg0/I");
+    theTree->Branch("trigDoubleLeg1",          &trigDoubleLeg1,          "trigDoubleLeg1/I");
+    theTree->Branch("passPreselec",          &passPreselec,          "passPreselec/I");
+    theTree->Branch("passIP",          &passIP,          "passIP/I");
+    theTree->Branch("passFOnoIso",          &passFOnoIso,          "passFOnoIso/I");
+    theTree->Branch("passConvs",          &passConvs,          "passConvs/I");
     theTree->Branch("isSameSign",          &isSameSign,          "isSameSign/I");
+    theTree->Branch("topSelection",          &topSelection,          "topSelection/I");
+    theTree->Branch("topFO",          &topFO,          "topFO/I");
 
     testTree = CreateTree("signalTree","treeWithTheSigEvents");
     testTree->Branch("pt",          &pt,          "pt/F");
@@ -233,7 +252,10 @@ void HWWAnalysis::Initialise() {
 
 void HWWAnalysis::InsideLoop() {
     
-    if (!((T_Event_RunNumber>207099)&&(T_Event_RunNumber<208686))) return;
+  // if ((T_Event_RunNumber>207099)&&(T_Event_RunNumber<208686)) return;
+   // if (!((T_Event_RunNumber==191226)&&(T_Event_LuminosityBlock>878)&&(T_Event_LuminosityBlock<1003))) return;
+   // if (!((T_Event_RunNumber==206745)&&(T_Event_LuminosityBlock>765)&&(T_Event_LuminosityBlock<874))) return;
+//if (!((T_Event_RunNumber==203912)&&(T_Event_LuminosityBlock>710)&&(T_Event_LuminosityBlock<818))) return;
   // print the event number
    // cout << "event=" << T_Event_EventNumber << endl;
   // The InsideLoop() function is called for each entry in the tree to be 
@@ -241,6 +263,10 @@ void HWWAnalysis::InsideLoop() {
 /*    if (signal == "electrons_runA"){
         if ((T_Event_RunNumber==190949)||(T_Event_RunNumber==191090)||(T_Event_RunNumber==191367)||(T_Event_RunNumber==193112)||(T_Event_RunNumber==193116)) return;
     }*/
+   // if (!(isAGoodEvent(T_Event_RunNumber, T_Event_LuminosityBlock))) return;
+
+    runNumber = T_Event_RunNumber;
+    lumiSec = T_Event_LuminosityBlock;
     TLorentzVector* elecTag;
     TLorentzVector*  elecProb;
     TLorentzVector sumElec;
@@ -376,6 +402,23 @@ void HWWAnalysis::InsideLoop() {
                 passFO_BDT = passFO && passBDT;
                 passFO_ISO = passFO && passISO;
                 passFO_BDT_ISO = passFO_BDT && passISO;
+               passBDT_ISO = passBDT && passISO;
+                passPreselec = passPreCuts(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j));
+                passIP = passIPcuts( T_Elec_d0->at(j), T_Elec_dZ->at(j));
+               passConvs = passMissItCons(T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j));
+               passFOnoIso = FOnoIso(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j));
+               passAllNoIsoDet = passFOnoIso && passISO && passBDT;
+               passNM1IP = passPreselec && passConvs && passBDT_ISO;
+               passNM1convs = passPreselec && passIP && passBDT_ISO;
+               passNM1presel = passConvs && passIP && passBDT_ISO;
+               trigSingle = T_Elec_HLT_Elec27_WP80->at(j);
+               trigDoubleLeg0 = T_Elec_HLT_Ele17_Ele8_Ele8Leg->at(j);
+               trigDoubleLeg1 = T_Elec_HLT_Ele17_Ele8_Ele17Leg->at(j);
+               float the03RelIsolation = calc03Iso(pt, SCeta , T_Event_RhoIso, j);
+               topSelection = (T_Elec_MVAid_trig->at(j)>0.5)&&passConvs&&(the03RelIsolation<0.15)&&(T_Elec_d0->at(j)<0.04);
+               //cout << "pass? " << (T_Elec_MVAid_trig->at(j)>0.5) << " " << passConvs << " " << (the03RelIsolation<0.15) << " " << (T_Elec_d0->at(j)<0.04) << endl;
+               topFO = (T_Elec_MVAid_trig->at(j)>-0.1)&&passConvs&&(the03RelIsolation<1.0)&&(T_Elec_d0->at(j)<0.1);
+
                 isSameSign = (T_Elec_Charge->at(i)*T_Elec_Charge->at(j)==1 ? 1 : 0);
                
                float pass=0;
@@ -386,6 +429,7 @@ void HWWAnalysis::InsideLoop() {
                 // cout <<  T_Event_RunNumber << " " << T_Event_EventNumber << " " << mass << " " << T_Elec_Pt->at(i) << " " << T_Elec_Charge->at(i) << " " << pt << " " << T_Elec_Charge->at(j) << " " << pass << endl;
                theTree->Fill();
                hMass->Fill(mass);
+               fillTheHistoMass(j, mass);
                if ((mass<100)&&(mass>80)&&(T_Elec_Pt->at(j)>10)) {
                    fillTheHisto(j);
                  //  fillTheTestTree(j,1);
@@ -424,12 +468,16 @@ void HWWAnalysis::compWeights(int nbVtx){
     float runBweights[50] = {0.755029, 1.04812, 1.19818, 1.26512, 1.35359, 1.42638, 1.47226, 1.52087, 1.54476, 1.53856, 1.52282, 1.48216, 1.43442, 1.37939, 1.32735, 1.27745, 1.22843, 1.18992, 1.15664, 1.12601, 1.0979, 1.07451, 1.04573, 1.01647, 0.982746, 0.943448, 0.900252, 0.849388, 0.792951, 0.733358, 0.669741, 0.60798, 0.545072, 0.480276, 0.420655, 0.363559, 0.311096, 0.264178, 0.221564, 0.183077, 0.150064, 0.122329, 0.0983644, 0.0781441, 0.0614781, 0.0480073, 0.0371809, 0.0282992, 0.0215801, 0.0163058};
     float runCweights[50] = {0.486018, 0.56173, 0.6633, 0.753877, 0.874244, 0.995233, 1.10175, 1.21003, 1.29483, 1.34688, 1.38135, 1.38372, 1.37062, 1.34307, 1.3124, 1.27903, 1.24252, 1.21311, 1.18587, 1.15839, 1.13088, 1.1061, 1.07431, 1.04137, 1.00408, 0.962099, 0.917782, 0.867696, 0.81409, 0.759285, 0.701982, 0.647782, 0.592907, 0.535719, 0.483308, 0.432177, 0.384313, 0.34062, 0.299427, 0.260391, 0.225524, 0.195003, 0.166934, 0.141691, 0.119506, 0.100373, 0.0838754, 0.069088, 0.0571805, 0.0470227};
     float runDweights[50] = {0.189659, 0.271387, 0.34027, 0.404113, 0.48973, 0.583095, 0.674846, 0.773579, 0.861875, 0.93084, 0.988508, 1.02284, 1.04455, 1.05387, 1.05958, 1.06244, 1.06242, 1.06872, 1.07772, 1.08753, 1.09836, 1.11294, 1.12126, 1.12865, 1.13108, 1.12727, 1.11908, 1.10141, 1.07595, 1.04489, 1.00573, 0.965985, 0.91994, 0.864468, 0.810683, 0.753109, 0.695325, 0.639457, 0.582911, 0.525348, 0.471278, 0.421855, 0.373684, 0.328072, 0.28612, 0.248437, 0.214596, 0.182713, 0.156328, 0.132928};
+    float runAsingleweights[50] = {0.0556421, 0.131913, 0.245752, 0.403764, 0.641765, 0.958889, 1.33926, 1.78689, 2.23844, 2.62731, 2.9303, 3.07544, 3.07365, 2.92522, 2.67165, 2.34206, 1.97036, 1.60524, 1.26312, 0.959508, 0.704922, 0.503016, 0.346199, 0.231395, 0.149965, 0.0943136, 0.057754, 0.034332, 0.0198652, 0.011222, 0.00617867, 0.00334219, 0.00176676, 0.000909211, 0.000461103, 0.000228939, 0.00011173, 5.37535e-05, 2.53839e-05, 1.1742e-05, 5.35913e-06, 2.4203e-06, 1.07307e-06, 4.67931e-07, 2.01209e-07, 8.55278e-08, 3.59175e-08, 1.47683e-08, 6.06217e-09, 2.4572e-09};
+    float runDsingleweights[50] = {0.0734205, 0.166531, 0.298051, 0.472309, 0.726821, 1.05524, 1.43715, 1.87606, 2.30684, 2.66601, 2.93663, 3.05277, 3.0305, 2.87258, 2.61995, 2.29942, 1.94154, 1.59134, 1.2627, 0.969442, 0.721415, 0.522547, 0.365825, 0.24922, 0.164952, 0.106148, 0.0666358, 0.0406822, 0.0242188, 0.0141006, 0.00801517, 0.00448351, 0.00245493, 0.00131066, 0.000690659, 0.00035685, 0.000181502, 9.11369e-05, 4.49824e-05, 2.17787e-05, 1.0418e-05, 4.9379e-06, 2.30068e-06, 1.05567e-06, 4.78258e-07, 2.14453e-07, 9.51201e-08, 4.1358e-08, 1.79734e-08, 7.72183e-09};
     float allHCPdataset[50] = {0.430197, 0.55548, 0.652449, 0.725975, 0.825586, 0.926318, 1.01602, 1.11065, 1.18723, 1.23701, 1.27325, 1.28168, 1.27676, 1.25874, 1.23778, 1.21416, 1.18747, 1.16768, 1.15034, 1.13333, 1.11695, 1.10396, 1.08458, 1.06439, 1.03981, 1.01008, 0.977264, 0.937321, 0.89226, 0.844345, 0.791948, 0.74129, 0.688104, 0.63042, 0.576587, 0.522621, 0.471031, 0.42311, 0.376965, 0.332277, 0.291743, 0.25579, 0.222104, 0.19129, 0.163786, 0.139728, 0.118671, 0.0994171, 0.0837516, 0.070164};
     weight =  allHCPdataset[nbVtx-1];
     weight_runA = runAweights[nbVtx-1];
     weight_runB = runBweights[nbVtx-1];
     weight_runC = runCweights[nbVtx-1];
     weight_runD = runDweights[nbVtx-1];
+    weight_runAsingle = runAsingleweights[nbVtx-1];
+    weight_runDsingle = runDsingleweights[nbVtx-1];
     
 }
 void HWWAnalysis::fillTheHisto(int theElec){
@@ -451,7 +499,7 @@ void HWWAnalysis::fillTheHisto(int theElec){
                 if (!((fabs(T_Elec_SC_Eta->at(theElec))>0.8)&&(fabs(T_Elec_SC_Eta->at(theElec))<1.479)&&(T_Elec_Pt->at(theElec)<20))) continue; 
                 break;    
             case 6:
-                if (!((fabs(T_Elec_SC_Eta->at(theElec))>1.479)&&(fabs(T_Elec_SC_Eta->at(theElec))<1.479)&&(T_Elec_Pt->at(theElec)>20))) continue; 
+                if (!((fabs(T_Elec_SC_Eta->at(theElec))>0.8)&&(fabs(T_Elec_SC_Eta->at(theElec))<1.479)&&(T_Elec_Pt->at(theElec)>20))) continue;
                 break;    
             case 7:
                 if (!((fabs(T_Elec_SC_Eta->at(theElec))>1.479)&&(fabs(T_Elec_SC_Eta->at(theElec))<2.5)&&(T_Elec_Pt->at(theElec)<20))) continue; 
@@ -501,6 +549,39 @@ void HWWAnalysis::fillTheHisto(int theElec){
         hfBrem[index]->Fill(T_Elec_fBrem->at(theElec));
         hPt[index]->Fill(T_Elec_Pt->at(theElec));
         hEta[index]->Fill(T_Elec_Eta->at(theElec));
+    }
+}
+void HWWAnalysis::fillTheHistoMass(int theElec, float theMass){
+    for (int index=0 ; index < 9 ; index++){
+        switch (index) {
+            case 1:
+                if (!(fabs(T_Elec_SC_Eta->at(theElec))<1.479)) continue;
+                break;
+            case 2:
+                if (!(fabs(T_Elec_SC_Eta->at(theElec))>1.479)) continue;
+                break;
+            case 3:
+                if (!((fabs(T_Elec_SC_Eta->at(theElec))<0.8)&&(T_Elec_Pt->at(theElec))<20)) continue;
+                break;
+            case 4:
+                if (!((fabs(T_Elec_SC_Eta->at(theElec))<0.8)&&(T_Elec_Pt->at(theElec))>20)) continue;
+                break;
+            case 5:
+                if (!((fabs(T_Elec_SC_Eta->at(theElec))>0.8)&&(fabs(T_Elec_SC_Eta->at(theElec))<1.479)&&(T_Elec_Pt->at(theElec)<20))) continue;
+                break;
+            case 6:
+                if (!((fabs(T_Elec_SC_Eta->at(theElec))>0.8)&&(fabs(T_Elec_SC_Eta->at(theElec))<1.479)&&(T_Elec_Pt->at(theElec)>20))) continue;
+                break;
+            case 7:
+                if (!((fabs(T_Elec_SC_Eta->at(theElec))>1.479)&&(fabs(T_Elec_SC_Eta->at(theElec))<2.5)&&(T_Elec_Pt->at(theElec)<20))) continue;
+                break;
+            case 8:
+                if (!((fabs(T_Elec_SC_Eta->at(theElec))>1.479)&&(fabs(T_Elec_SC_Eta->at(theElec))<2.5)&&(T_Elec_Pt->at(theElec)>20))) continue;
+                break;
+            default:
+                break;
+        }
+        hMassUncut[index]->Fill(theMass);
     }
 }
 
@@ -778,7 +859,32 @@ float HWWAnalysis::giveMyPOGiso(float thePt, TLorentzVector *theElec,float delta
 }
 
 
-
+float HWWAnalysis::calc03Iso(float thePt,  float theSCEta, float rho,int j){
+	float EffectiveArea = 0;
+	if (fabs(theSCEta) >= 0.0 && fabs(theSCEta) < 1.0 ) EffectiveArea = 0.100;
+	if (fabs(theSCEta) >= 1.0 && fabs(theSCEta) < 1.479 ) EffectiveArea = 0.120;
+	if (fabs(theSCEta) >= 1.479 && fabs(theSCEta) < 2.0 ) EffectiveArea = 0.085;
+	if (fabs(theSCEta) >= 2.0 && fabs(theSCEta) < 2.2 ) EffectiveArea = 0.110;
+	if (fabs(theSCEta) >= 2.2 && fabs(theSCEta) < 2.3 ) EffectiveArea = 0.120;
+	if (fabs(theSCEta) >= 2.3 && fabs(theSCEta) < 2.4 ) EffectiveArea = 0.120;
+	if (fabs(theSCEta) >= 2.4) EffectiveArea = 0.211;
+    
+    // obtain the isolations
+    float isoNeutralHadrons =T_Elec_neutralHadronIso->at(j);
+    float isoEm = T_Elec_photonIso->at(j);
+    float isoCharged = T_Elec_chargedHadronIso->at(j);
+    //cout << "Neutral=" << isoNeutralHadrons << " EM=" << isoEm << " Charged=" << isoCharged << endl;
+	// apply to neutrals
+    double rhoPrime = (rho>0 ? rho : 0);
+    double iso_n = std::max(isoNeutralHadrons + isoEm - rhoPrime * EffectiveArea
+							, 0.0);
+	
+    // compute final isolation
+    double iso = (iso_n + isoCharged) / thePt;
+	
+	return iso;
+    
+}
 
 float HWWAnalysis::calcPFIso(TLorentzVector *theElec,float deltaRmax, PFisolationType isoType, bool barrelEndcap){
  //   cout << "eta = " << eta << "phi = " << phi << endl;
@@ -964,6 +1070,60 @@ float HWWAnalysis::congPhi(float thePhi){
     return 0;
 }
 
+bool HWWAnalysis::passPreCuts(float myPt, int isEB, float theSigIeta, float deltaEtaSC, float deltaPhiSC,float HOE)
+{
+
+    if (isEB) {
+        if (theSigIeta                               > 0.01)  return false;
+        if (fabs(deltaEtaSC)        > 0.007) return false;
+        if (fabs(deltaPhiSC)        > 0.15)  return false;
+        if (HOE                              > 0.12)  return false;
+    } else {
+        if (theSigIeta                               > 0.03)  return false;
+        if (fabs(deltaEtaSC)        > 0.009) return false;
+        if (fabs(deltaPhiSC)        > 0.10)  return false;
+        if (HOE                              > 0.10)  return false;
+    }
+    
+    return true;
+    
+}
+bool HWWAnalysis::FOnoIso(float myPt, int isEB, float theSigIeta, float deltaEtaSC, float deltaPhiSC,float HOE,float d0, float dz,bool conversion, int nMissHit)
+{
+    
+    if (isEB) {
+        if (theSigIeta                               > 0.01)  return false;
+        if (fabs(deltaEtaSC)        > 0.007) return false;
+        if (fabs(deltaPhiSC)        > 0.15)  return false;
+        if (HOE                              > 0.12)  return false;
+    } else {
+        if (theSigIeta                               > 0.03)  return false;
+        if (fabs(deltaEtaSC)        > 0.009) return false;
+        if (fabs(deltaPhiSC)        > 0.10)  return false;
+        if (HOE                              > 0.10)  return false;
+    }
+    if (d0 > 0.02)                                  return false;
+    if (dz > 0.1)                                   return false;
+    if (nMissHit > 0)      return false;
+    if (conversion)           return false;
+    return true;
+    
+}
+
+
+bool HWWAnalysis::passIPcuts(float d0, float dz)
+{
+    if (d0 > 0.02)                                  return false;
+    if (dz > 0.1)                                   return false;
+    return true;
+}
+
+bool HWWAnalysis::passMissItCons(bool conversion, int nMissHit)
+{
+    if (nMissHit > 0)      return false;
+    if (conversion)           return false;
+    return true;
+}
 
 void HWWAnalysis::Summary() {
   cout << " ---------------------------------------------------" << endl;
@@ -972,6 +1132,7 @@ void HWWAnalysis::Summary() {
   cout << endl;
   
 }
+
 
 
 

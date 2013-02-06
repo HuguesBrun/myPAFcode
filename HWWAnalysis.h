@@ -90,6 +90,8 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     TH1F* hfBrem[9];
     TH1F* hPt[9];
     TH1F* hEta[9];
+    TH1F* hMassUncut[9];
+    
     
     TH1F* hMass;
     
@@ -116,12 +118,14 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
   virtual int  isGenMatched(int, int, int);
   virtual void compWeights(int);
   virtual void fillTheHisto(int);
+  virtual void fillTheHistoMass(int , float );
   virtual void fillTheTestTree(int, int);
   virtual bool passTightIdNoIso(int, float, float, float, float, float, float, float, int, int);
   virtual bool passTightIdNoIsoModified(int, float, float, float, float, float, float, float, int, int);
   virtual float giveThePOGiso(float, float, float, float, float, float);
   virtual float giveThePOGisoPU2012(float, float, float, float, float, float);
   virtual float giveMyPOGiso(float, TLorentzVector *,float, bool, float, float);
+    virtual float calc03Iso(float,  float, float,int);
   virtual float calcPFIso(TLorentzVector*, float, PFisolationType, bool);
   virtual float calcPFRadIso(TLorentzVector *,float , float , PFisolationType , bool , bool , bool );
   virtual float giveRadIso(TLorentzVector *, float, bool , bool , bool );
@@ -131,11 +135,20 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
   virtual float PFisolationWithDeltaBeta(int);
   virtual void FillThePFtree(TLorentzVector *, float , bool , bool);
   virtual float congPhi(float );
+  virtual bool  passPreCuts(float, int, float, float, float,float);
+  virtual bool  passIPcuts(float, float);
+  virtual  bool passMissItCons(bool , int );
+  virtual  bool FOnoIso(float , int , float , float , float ,float ,float , float ,bool , int );
+ // virtual bool isAGoodEvent(int, int);
+
+
 
 
     
     bool isMC;
     TString signal;
+    int runNumber;
+    int lumiSec;
     float mass;
     float pt;
     float eta;
@@ -147,6 +160,8 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     float weight_runB;
     float weight_runC;
     float weight_runD;
+    float weight_runAsingle;
+    float weight_runDsingle;
     int isFSR;
     int tag_isFSR;
     float tag_pt;
@@ -164,7 +179,21 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     int passFO_BDT;
     int passFO_ISO;
     int passFO_BDT_ISO;
+    int passBDT_ISO;
+    int passAllNoIsoDet;
+    int passNM1IP;
+    int passNM1presel;
+    int passNM1convs;
+    int trigSingle;
+    int trigDoubleLeg0;
+    int trigDoubleLeg1;
+    int passPreselec;
+    int passIP;
+    int passConvs;
+    int passFOnoIso;
     int isSameSign;
+    int topSelection;
+    int topFO;
     
     //for testTree
     int isTriggering;
