@@ -110,6 +110,7 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     TTree *theTree; 
     TTree *testTree;
     TTree *isoInfo;
+    TTree *treeClusterShape;
     
     
   virtual void Initialise();
@@ -139,6 +140,8 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
   virtual bool  passIPcuts(float, float);
   virtual  bool passMissItCons(bool , int );
   virtual  bool FOnoIso(float , int , float , float , float ,float ,float , float ,bool , int );
+    virtual void fillTheCLTree(int );
+
  // virtual bool isAGoodEvent(int, int);
 
 
@@ -146,6 +149,7 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
 
     
     bool isMC;
+    bool doMuons;
     TString signal;
     int runNumber;
     int lumiSec;
@@ -177,6 +181,8 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     int passBDT; 
     int passISO;
     int passFO_BDT;
+    int tag_passISO;
+    int pair_passISO;
     int passFO_ISO;
     int passFO_BDT_ISO;
     int passBDT_ISO;
@@ -287,9 +293,61 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     int isSignalBg;
     float PFdeltaR;
                                      
+    // treeClusterShape
+    //general variables
+
     
-  //virtual int isPassingPOGid();
- 
+     // MVA tracking 
+    float CL_fBrem;
+    float CL_hkfchi2;
+    float CL_hkfhits;
+    // Geometrical matiching
+    float CL_deltaPhiIn;
+    float CL_deltaEtaIn;
+    float CL_detacalo;
+    // ECAL shower variables
+    float CL_see;
+    float CL_spp;
+    float CL_etawidth;
+    float CL_phiwidth;
+    float CL_e1x5e5x5;
+    float CL_R9;
+    
+    // energy matching
+    float CL_HoE;
+    float CL_EoP;
+    float CL_IoEmIoP;
+    float CL_eleEoPout;
+    float CL_preshowerOverRaw;
+
+    // IP
+    float CL_d0;
+    float CL_ip3d;
+    
+    // more vars
+    float CL_sigmaIetaIeta;
+    float CL_passConversionVeto;
+    float CL_isEcalDriven;
+    float CL_hnHits;
+    float CL_dZ;
+    float CL_MVA;
+    float CL_CombIsoHWW; 
+    
+    // the detIsos
+    float CL_isoECAL;
+    float CL_isoHCAL;
+    float CL_isoTracker;
+
+    // the detIsos
+    float CL_isoECALRelat;
+    float CL_isoECALRelatModif;
+    float CL_isoHCALRelat;
+    float CL_isoTrackerRelat;
+    
+    // passPreselection
+    float CL_passPreselection;
+    
+
 
   ClassDef(HWWAnalysis,0);
 };

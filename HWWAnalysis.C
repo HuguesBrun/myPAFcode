@@ -32,6 +32,7 @@ void HWWAnalysis::Initialise() {
     
     GetInputParameters()->TheNamedBool("isMC", isMC);
     signal = GetInputParameters()->TheNamedString("Signal");
+    GetInputParameters()->TheNamedBool("doMuons", doMuons);
     cout << "le MC est a " << isMC << endl;
     
     passCuts = CreateH1F("cut_flow", "", 8,-0.5,7.5);
@@ -128,6 +129,8 @@ void HWWAnalysis::Initialise() {
     theTree->Branch("passBDT",          &passBDT,          "passBDT/I");
     theTree->Branch("passISO",          &passISO,          "passISO/I");
     theTree->Branch("passFO_BDT",          &passFO_BDT,          "passFO_BDT/I");
+    theTree->Branch("tag_passISO",          &tag_passISO,          "tag_passISO/I");
+    theTree->Branch("pair_passISO",          &pair_passISO,          "pair_passISO/I");
     theTree->Branch("passFO_ISO",          &passFO_ISO,          "passFO_ISO/I");
     theTree->Branch("passFO_BDT_ISO",          &passFO_BDT_ISO,          "passFO_BDT_ISO/I");
     theTree->Branch("passBDT_ISO",          &passBDT_ISO,          "passBDT_ISO/I");
@@ -244,6 +247,53 @@ void HWWAnalysis::Initialise() {
     isoInfo->Branch("mainPt", &mainPt, "mainPt/F");
     isoInfo->Branch("isSignalBg", &isSignalBg, "isSignalBg/I");
     isoInfo->Branch("PFdeltaR", &PFdeltaR, "PFdeltaR/F");
+    
+    treeClusterShape = CreateTree("treeClusterShape","theTreeWithTheClusterShapeVars");
+    treeClusterShape->Branch("mass", &mass, "mass/F");
+    treeClusterShape->Branch("pt", &pt, "pt/F");
+    treeClusterShape->Branch("absSCeta", &absSCeta, "absSCeta/F");
+    treeClusterShape->Branch("lumiSec", &lumiSec, "lumiSec/F");
+    treeClusterShape->Branch("runNumber", &runNumber, "runNumber/F");
+    treeClusterShape->Branch("isSameSign", &isSameSign, "isSameSign/I");
+    treeClusterShape->Branch("eventMatched", &eventMatched, "eventMatched/I");
+    treeClusterShape->Branch("eventMatched2", &eventMatched2, "eventMatched2/I");
+    treeClusterShape->Branch("eventMatched3", &eventMatched3, "eventMatched3/I");
+
+    
+    treeClusterShape->Branch("CL_fBrem", &CL_fBrem, "CL_fBrem/F");
+    treeClusterShape->Branch("CL_hkfchi2", &CL_hkfchi2, "CL_hkfchi2/F");
+    treeClusterShape->Branch("CL_hkfhits", &CL_hkfhits, "CL_hkfhits/F");
+    treeClusterShape->Branch("CL_deltaPhiIn", &CL_deltaPhiIn, "CL_deltaPhiIn/F");
+    treeClusterShape->Branch("CL_deltaEtaIn", &CL_deltaEtaIn, "CL_deltaEtaIn/F");
+    treeClusterShape->Branch("CL_detacalo", &CL_detacalo, "CL_detacalo/F");
+    treeClusterShape->Branch("CL_see", &CL_see, "CL_see/F");
+    treeClusterShape->Branch("CL_spp", &CL_spp, "CL_spp/F");
+    treeClusterShape->Branch("CL_etawidth", &CL_etawidth, "CL_etawidth/F");
+    treeClusterShape->Branch("CL_phiwidth", &CL_phiwidth, "CL_phiwidth/F");
+    treeClusterShape->Branch("CL_e1x5e5x5", &CL_e1x5e5x5, "CL_e1x5e5x5/F");
+    treeClusterShape->Branch("CL_R9", &CL_R9, "CL_R9/F");
+    treeClusterShape->Branch("CL_HoE", &CL_HoE, "CL_HoE/F");
+    treeClusterShape->Branch("CL_EoP", &CL_EoP, "CL_EoP/F");
+    treeClusterShape->Branch("CL_IoEmIoP", &CL_IoEmIoP, "CL_IoEmIoP/F");
+    treeClusterShape->Branch("CL_eleEoPout", &CL_eleEoPout, "CL_eleEoPout/F");
+    treeClusterShape->Branch("CL_preshowerOverRaw", &CL_preshowerOverRaw, "CL_preshowerOverRaw/F");
+    treeClusterShape->Branch("CL_d0", &CL_d0, "CL_d0/F");
+    treeClusterShape->Branch("CL_ip3d", &CL_ip3d, "CL_ip3d/F");
+    treeClusterShape->Branch("CL_dZ", &CL_dZ, "CL_dZ/F");
+    treeClusterShape->Branch("CL_sigmaIetaIeta", &CL_sigmaIetaIeta, "CL_sigmaIetaIeta/F");
+    treeClusterShape->Branch("CL_passConversionVeto", &CL_passConversionVeto, "CL_passConversionVeto/F");
+    treeClusterShape->Branch("CL_isEcalDriven", &CL_isEcalDriven, "CL_isEcalDriven/F");
+    treeClusterShape->Branch("CL_hnHits", &CL_hnHits, "CL_hnHits/F");
+    treeClusterShape->Branch("CL_isoECAL", &CL_isoECAL, "CL_isoECAL/F");
+    treeClusterShape->Branch("CL_isoHCAL", &CL_isoHCAL, "CL_isoHCAL/F");
+    treeClusterShape->Branch("CL_isoTracker", &CL_isoTracker, "CL_isoTracker/F");
+    treeClusterShape->Branch("CL_isoECALRelat", &CL_isoECALRelat, "CL_isoECALRelat/F");
+    treeClusterShape->Branch("CL_isoECALRelatModif", &CL_isoECALRelatModif, "CL_isoECALRelatModif/F");
+    treeClusterShape->Branch("CL_isoHCALRelat", &CL_isoHCALRelat, "CL_isoHCALRelat/F");
+    treeClusterShape->Branch("CL_isoTrackerRelat", &CL_isoTrackerRelat, "CL_isoTrackerRelat/F");
+    treeClusterShape->Branch("CL_MVA", &CL_MVA, "CL_MVA/F");
+    treeClusterShape->Branch("CL_CombIsoHWW", &CL_CombIsoHWW, "CL_CombIsoHWW/F");
+    treeClusterShape->Branch("CL_passPreselection", &CL_passPreselection, "CL_passPreselection/F");
 
 
 
@@ -252,7 +302,7 @@ void HWWAnalysis::Initialise() {
 
 void HWWAnalysis::InsideLoop() {
     
-  // if ((T_Event_RunNumber>207099)&&(T_Event_RunNumber<208686)) return;
+   if ((T_Event_RunNumber>207099)&&(T_Event_RunNumber<208686)) return;
    // if (!((T_Event_RunNumber==191226)&&(T_Event_LuminosityBlock>878)&&(T_Event_LuminosityBlock<1003))) return;
    // if (!((T_Event_RunNumber==206745)&&(T_Event_LuminosityBlock>765)&&(T_Event_LuminosityBlock<874))) return;
 //if (!((T_Event_RunNumber==203912)&&(T_Event_LuminosityBlock>710)&&(T_Event_LuminosityBlock<818))) return;
@@ -346,7 +396,9 @@ void HWWAnalysis::InsideLoop() {
             //cout << "on passe tight ? " << T_Elec_passTight->at(i) << endl;
             //cout << "on passe mytight ? " << caPasse << endl;
             //if (!(tagPassLoose&&(theTagIso<cutIsoValue))) continue;
+            bool passAllHwwSelec = T_Elec_isFO->at(i) && T_Elec_passMVA->at(i);
             if (!(T_Elec_passTight->at(i)==1)) continue;
+           // if (!(passAllHwwSelec)) continue;
             findAGoodTag = true;
             //if (!(T_Elec_passMedium->at(i)==1)) continue;
             passCuts->Fill("tagPassTight",1);
@@ -403,6 +455,8 @@ void HWWAnalysis::InsideLoop() {
                 passFO_ISO = passFO && passISO;
                 passFO_BDT_ISO = passFO_BDT && passISO;
                passBDT_ISO = passBDT && passISO;
+               tag_passISO = ((T_Elec_CombIsoHWW->at(i)/pt)<0.15);
+               pair_passISO = tag_passISO && passISO;
                 passPreselec = passPreCuts(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j));
                 passIP = passIPcuts( T_Elec_d0->at(j), T_Elec_dZ->at(j));
                passConvs = passMissItCons(T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j));
@@ -419,8 +473,9 @@ void HWWAnalysis::InsideLoop() {
                //cout << "pass? " << (T_Elec_MVAid_trig->at(j)>0.5) << " " << passConvs << " " << (the03RelIsolation<0.15) << " " << (T_Elec_d0->at(j)<0.04) << endl;
                topFO = (T_Elec_MVAid_trig->at(j)>-0.1)&&passConvs&&(the03RelIsolation<1.0)&&(T_Elec_d0->at(j)<0.1);
 
-                isSameSign = (T_Elec_Charge->at(i)*T_Elec_Charge->at(j)==1 ? 1 : 0);
-               
+              isSameSign = (T_Elec_Charge->at(i)*T_Elec_Charge->at(j)==1 ? 1 : 0);
+               fillTheCLTree(j);
+
                float pass=0;
                //if (passTight==1 && T_Elec_passTight->at(j)==1) pass=1;
 	           //if ((T_Elec_Charge->at(i)*T_Elec_Charge->at(j))==1) continue;
@@ -443,7 +498,9 @@ void HWWAnalysis::InsideLoop() {
       //  if (findEventInMassWindows) cout << "on a un tag j=" << j << endl;
         
     }
-    
+    if (doMuons){
+        
+    }
     
  /*   pt = T_Elec_Pt->at(0);
     eta = T_Elec_Eta->at(0);
@@ -1123,6 +1180,46 @@ bool HWWAnalysis::passMissItCons(bool conversion, int nMissHit)
     if (nMissHit > 0)      return false;
     if (conversion)           return false;
     return true;
+}
+
+void HWWAnalysis::fillTheCLTree(int Theite){
+    CL_fBrem = T_Elec_fBrem->at(Theite);
+    CL_hkfchi2 = T_Elec_kfchi2->at(Theite);
+    CL_hkfhits = T_Elec_kfhits->at(Theite);
+    CL_deltaPhiIn = T_Elec_deltaPhiIn->at(Theite);
+    CL_deltaEtaIn = T_Elec_deltaEtaIn->at(Theite);
+    CL_detacalo = T_Elec_detacalo->at(Theite);
+    CL_see = T_Elec_see->at(Theite);
+    CL_spp = T_Elec_spp->at(Theite);
+    CL_etawidth = T_Elec_etawidth->at(Theite);
+    CL_phiwidth = T_Elec_phiwidth->at(Theite);
+    CL_e1x5e5x5 = T_Elec_e1x5e5x5->at(Theite);
+    CL_R9 = T_Elec_R9->at(Theite);
+    CL_HoE = T_Elec_HtoE->at(Theite);
+    CL_EoP = T_Elec_EoP->at(Theite);
+    CL_IoEmIoP = T_Elec_IoEmIoP->at(Theite);
+    CL_eleEoPout = T_Elec_eleEoPout->at(Theite);
+    CL_preshowerOverRaw = (T_Elec_isEE->at(Theite))? T_Elec_PreShowerOverRaw->at(Theite):-1;
+    CL_d0 = T_Elec_d0->at(Theite);
+    CL_ip3d = T_Elec_IP3D->at(Theite);
+    CL_dZ = T_Elec_dZ->at(Theite);
+    CL_sigmaIetaIeta = T_Elec_sigmaIetaIeta->at(Theite);
+    CL_passConversionVeto = T_Elec_passConversionVeto->at(Theite);
+    CL_isEcalDriven   = T_Elec_isEcalDriven->at(Theite);
+    CL_hnHits = T_Elec_nHits->at(Theite);
+    CL_MVA = T_Elec_MVAid_trig->at(Theite);
+    CL_CombIsoHWW = T_Elec_CombIsoHWW->at(Theite);
+    CL_passPreselection = T_Elec_isFO->at(Theite);
+/*    CL_isoECAL = T_Elec_dr03EcalSumEt->at(Theite);
+    CL_isoHCAL = T_Elec_dr03HcalSumEt->at(Theite);
+    CL_isoTracker = T_Elec_dr03TkSumPt->at(Theite);
+    CL_isoECALRelat = T_Elec_dr03EcalSumEt->at(Theite)/pt;
+    CL_isoHCALRelat = T_Elec_dr03HcalSumEt->at(Theite)/pt;
+    CL_isoTrackerRelat = T_Elec_dr03TkSumPt->at(Theite)/pt;
+    CL_isoECALRelatModif = (T_Elec_isEB->at(Theite)) ? (T_Elec_dr03TkSumPt->at(Theite)-1)/pt : T_Elec_dr03TkSumPt->at(Theite)/pt;*/
+    treeClusterShape->Fill();
+    
+    
 }
 
 void HWWAnalysis::Summary() {
