@@ -16,6 +16,9 @@
 #include "GlobalVariables.h"
 #include "MuonEffectiveArea.h"
 #include "MuonEffectiveArea.h"
+
+#define noPF 1
+
 #if !defined(__CINT__)
 ClassImp(HWWAnalysis);
 #endif
@@ -33,7 +36,10 @@ void HWWAnalysis::Initialise() {
     GetInputParameters()->TheNamedBool("isMC", isMC);
     signal = GetInputParameters()->TheNamedString("Signal");
     GetInputParameters()->TheNamedBool("doMuons", doMuons);
+    GetInputParameters()->TheNamedBool("runPF", runPF);
+
     cout << "le MC est a " << isMC << endl;
+    cout << "on va tourner le PF ? " << runPF << endl;
     
     passCuts = CreateH1F("cut_flow", "", 8,-0.5,7.5);
     hMass    = CreateH1F("diElecMass", "", 100,50,150);
@@ -309,7 +315,7 @@ void HWWAnalysis::Initialise() {
 
 void HWWAnalysis::InsideLoop() {
     
-   if ((T_Event_RunNumber>207099)&&(T_Event_RunNumber<208686)) return;
+   //if ((T_Event_RunNumber>207099)&&(T_Event_RunNumber<208686)) return;
    // if (!((T_Event_RunNumber==191226)&&(T_Event_LuminosityBlock>878)&&(T_Event_LuminosityBlock<1003))) return;
    // if (!((T_Event_RunNumber==206745)&&(T_Event_LuminosityBlock>765)&&(T_Event_LuminosityBlock<874))) return;
 //if (!((T_Event_RunNumber==203912)&&(T_Event_LuminosityBlock>710)&&(T_Event_LuminosityBlock<818))) return;
@@ -331,7 +337,6 @@ void HWWAnalysis::InsideLoop() {
 	passCuts->Fill("no cut",1);
 //	cout << "nb of elec in the event = " << T_Elec_Pt->size() << endl;
     int nbElec = T_Elec_Pt->size();
-
     if (nbElec == 0) return;
     else if((nbElec == 1)&&(T_METPF_ET<20)&&(T_Elec_Pt->at(0)>10)){
       // fillTheTestTree(0,0);
@@ -957,6 +962,9 @@ float HWWAnalysis::calc03Iso(float thePt,  float theSCEta, float rho,int j){
 
 float HWWAnalysis::calcPFIso(TLorentzVector *theElec,float deltaRmax, PFisolationType isoType, bool barrelEndcap){
  //   cout << "eta = " << eta << "phi = " << phi << endl;
+#if !defined(noPF)
+
+    if (runPF){
     int nbOfPF = T_PF_Et->size();
     //cout << "nbOf PF particles=" << nbOfPF << endl;
     //cout << "eta " << theElec->Eta() << endl;
@@ -979,10 +987,15 @@ float HWWAnalysis::calcPFIso(TLorentzVector *theElec,float deltaRmax, PFisolatio
         }
     }
     return ptInCone;
+    }
+    else return -1;
+#endif
 }
 
 float HWWAnalysis::calcPFRadIso(TLorentzVector *theElec,float deltaRmax, float deltaRmin, PFisolationType isoType, bool barrelEndcap, bool cutForNonCharged, bool PUenergy){
     //   cout << "eta = " << eta << "phi = " << phi << endl;
+#if !defined(noPF)
+    if (runPF){
     int nbOfPF = T_PF_Et->size();
     //cout << "nbOf PF particles=" << nbOfPF << endl;
     //cout << "eta " << theElec->Eta() << endl;
@@ -1006,6 +1019,10 @@ float HWWAnalysis::calcPFRadIso(TLorentzVector *theElec,float deltaRmax, float d
         }
     }
     return ptInCone;
+    }
+    else return -1;
+#endif
+
 }
 
 
@@ -1033,7 +1050,10 @@ float HWWAnalysis::giveRadIso(TLorentzVector *theElec, float innerCone, bool bar
 
 
 float HWWAnalysis::calcPFRadIsoFonc(TLorentzVector *theElec,float deltaRmax, float deltaRmin, PFisolationType isoType, bool barrelEndcap, bool cutForNonCharged, bool PUenergy, int theFonct){
+#if !defined(noPF)
+
     //   cout << "eta = " << eta << "phi = " << phi << endl;
+    if (runPF){
     int nbOfPF = T_PF_Et->size();
     //cout << "nbOf PF particles=" << nbOfPF << endl;
     //cout << "eta " << theElec->Eta() << endl;
@@ -1070,7 +1090,9 @@ float HWWAnalysis::calcPFRadIsoFonc(TLorentzVector *theElec,float deltaRmax, flo
     }
   //  cout << "ptInCone=" << ptInCone << endl;
     return ptInCone;
-    
+    }
+    else return -1;
+#endif
 }
 
 
@@ -1106,8 +1128,9 @@ float HWWAnalysis::PFisolationWithDeltaBeta(int theIte){
 }
 
 void HWWAnalysis::FillThePFtree(TLorentzVector *theElec, float elecSCeta, bool sigBg, bool barrelEndcap){
+#if !defined(noPF)
+    if (runPF){
     int nbOfPF = T_PF_Et->size();
-
     for (int i = 0 ; i < nbOfPF ; i++){
         float deltaR = sqrt(pow(T_PF_Eta->at(i)-theElec->Eta(),2)+ pow(acos(cos(T_PF_Phi->at(i)-theElec->Phi())),2)) ;        
         if ((deltaR<0.4)){
@@ -1128,7 +1151,8 @@ void HWWAnalysis::FillThePFtree(TLorentzVector *theElec, float elecSCeta, bool s
             isoInfo->Fill();
         }
     }
-    
+    }
+#endif
 }
 
 

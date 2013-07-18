@@ -150,6 +150,7 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     
     bool isMC;
     bool doMuons;
+    bool runPF; 
     TString signal;
     int runNumber;
     int lumiSec;
