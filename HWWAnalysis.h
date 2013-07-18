@@ -168,6 +168,9 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     float weight_runD;
     float weight_runAsingle;
     float weight_runDsingle;
+    float weight_runAB_Rdep;
+    float weight_runC_Rdep;
+    float weight_runD_Rdep;
     int isFSR;
     int tag_isFSR;
     float tag_pt;
