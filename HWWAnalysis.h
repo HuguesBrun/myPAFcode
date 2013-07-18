@@ -153,6 +153,7 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     TString signal;
     int runNumber;
     int lumiSec;
+    int eventNumber;
     float mass;
     float pt;
     float eta;
@@ -199,6 +200,7 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     int passFOnoIso;
     int isSameSign;
     int topSelection;
+    int passFO_plus;
     int topFO;
     
     //for testTree
@@ -344,8 +346,18 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     float CL_isoHCALRelat;
     float CL_isoTrackerRelat;
     
+    // the non trig MVA
+    float CL_nonTrigMVA;
+    
     // passPreselection
     float CL_passPreselection;
+    
+    // PF isolation
+    float CL_PFchargedIso;
+    float CL_POGcombIso;
+    
+    // relatIsoPF
+    float CL_relatPFiso03;
     
 
 

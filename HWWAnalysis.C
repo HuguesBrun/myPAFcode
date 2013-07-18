@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 //   Analyzer for the Fake Rate Studies within HWW group               
 //
 //         AUTHOR:    Santiago Folgueras             
@@ -103,6 +103,7 @@ void HWWAnalysis::Initialise() {
     theTree->Branch("mass",          &mass,          "mass/F");
     theTree->Branch("runNumber",          &runNumber,          "runNumber/I");
     theTree->Branch("lumiSec",          &lumiSec,          "lumiSec/I");
+    theTree->Branch("eventNumber",          &eventNumber,          "eventNumber/I");
     theTree->Branch("pt",          &pt,          "pt/F");
     theTree->Branch("absEta",          &absEta,          "absEta/F");
     theTree->Branch("SCeta",          &SCeta,          "SCeta/F");
@@ -148,6 +149,7 @@ void HWWAnalysis::Initialise() {
     theTree->Branch("isSameSign",          &isSameSign,          "isSameSign/I");
     theTree->Branch("topSelection",          &topSelection,          "topSelection/I");
     theTree->Branch("topFO",          &topFO,          "topFO/I");
+    theTree->Branch("passFO_plus",          &passFO_plus,          "passFO_plus/I");
 
     testTree = CreateTree("signalTree","treeWithTheSigEvents");
     testTree->Branch("pt",          &pt,          "pt/F");
@@ -294,6 +296,11 @@ void HWWAnalysis::Initialise() {
     treeClusterShape->Branch("CL_MVA", &CL_MVA, "CL_MVA/F");
     treeClusterShape->Branch("CL_CombIsoHWW", &CL_CombIsoHWW, "CL_CombIsoHWW/F");
     treeClusterShape->Branch("CL_passPreselection", &CL_passPreselection, "CL_passPreselection/F");
+    treeClusterShape->Branch("CL_nonTrigMVA", &CL_nonTrigMVA, "CL_nonTrigMVA/F");
+    treeClusterShape->Branch("CL_PFchargedIso", &CL_PFchargedIso, "CL_PFchargedIso/F");
+    treeClusterShape->Branch("CL_POGcombIso", &CL_POGcombIso, "CL_POGcombIso/F");
+    treeClusterShape->Branch("CL_POGcombIso", &CL_POGcombIso, "CL_POGcombIso/F");
+    treeClusterShape->Branch("weight",&weight,"weight/F");
 
 
 
@@ -317,6 +324,7 @@ void HWWAnalysis::InsideLoop() {
 
     runNumber = T_Event_RunNumber;
     lumiSec = T_Event_LuminosityBlock;
+    eventNumber = T_Event_EventNumber;
     TLorentzVector* elecTag;
     TLorentzVector*  elecProb;
     TLorentzVector sumElec;
@@ -454,6 +462,10 @@ void HWWAnalysis::InsideLoop() {
                 passFO_BDT = passFO && passBDT;
                 passFO_ISO = passFO && passISO;
                 passFO_BDT_ISO = passFO_BDT && passISO;
+		//cout << "pt=" << pt << "mass=" << mass << endl;
+               //if ((pt>10&&pt<15)&&(mass>88&&mass<93)&&passFO_BDT_ISO==1){
+		//cout << T_Event_RunNumber << ":" << T_Event_LuminosityBlock << ":" << T_Event_EventNumber << endl;
+	       //}
                passBDT_ISO = passBDT && passISO;
                tag_passISO = ((T_Elec_CombIsoHWW->at(i)/pt)<0.15);
                pair_passISO = tag_passISO && passISO;
@@ -472,9 +484,9 @@ void HWWAnalysis::InsideLoop() {
                topSelection = (T_Elec_MVAid_trig->at(j)>0.5)&&passConvs&&(the03RelIsolation<0.15)&&(T_Elec_d0->at(j)<0.04);
                //cout << "pass? " << (T_Elec_MVAid_trig->at(j)>0.5) << " " << passConvs << " " << (the03RelIsolation<0.15) << " " << (T_Elec_d0->at(j)<0.04) << endl;
                topFO = (T_Elec_MVAid_trig->at(j)>-0.1)&&passConvs&&(the03RelIsolation<1.0)&&(T_Elec_d0->at(j)<0.1);
-
+               passFO_plus = passFO && (the03RelIsolation<0.3);
               isSameSign = (T_Elec_Charge->at(i)*T_Elec_Charge->at(j)==1 ? 1 : 0);
-               fillTheCLTree(j);
+              // fillTheCLTree(j);
 
                float pass=0;
                //if (passTight==1 && T_Elec_passTight->at(j)==1) pass=1;
@@ -1210,10 +1222,13 @@ void HWWAnalysis::fillTheCLTree(int Theite){
     CL_MVA = T_Elec_MVAid_trig->at(Theite);
     CL_CombIsoHWW = T_Elec_CombIsoHWW->at(Theite);
     CL_passPreselection = T_Elec_isFO->at(Theite);
-/*    CL_isoECAL = T_Elec_dr03EcalSumEt->at(Theite);
+    CL_nonTrigMVA = T_Elec_MVAid_Nontrig->at(Theite);
+    CL_PFchargedIso = T_Elec_chargedHadronIso->at(Theite)/T_Elec_Pt->at(Theite);
+    CL_POGcombIso = giveThePOGiso(T_Elec_Pt->at(Theite), T_Elec_neutralHadronIso->at(Theite), T_Elec_chargedHadronIso->at(Theite), T_Elec_photonIso->at(Theite), T_Elec_SC_Eta->at(Theite), T_Event_RhoIso);
+    CL_isoECAL = T_Elec_dr03EcalSumEt->at(Theite);
     CL_isoHCAL = T_Elec_dr03HcalSumEt->at(Theite);
     CL_isoTracker = T_Elec_dr03TkSumPt->at(Theite);
-    CL_isoECALRelat = T_Elec_dr03EcalSumEt->at(Theite)/pt;
+    /*CL_isoECALRelat = T_Elec_dr03EcalSumEt->at(Theite)/pt;
     CL_isoHCALRelat = T_Elec_dr03HcalSumEt->at(Theite)/pt;
     CL_isoTrackerRelat = T_Elec_dr03TkSumPt->at(Theite)/pt;
     CL_isoECALRelatModif = (T_Elec_isEB->at(Theite)) ? (T_Elec_dr03TkSumPt->at(Theite)-1)/pt : T_Elec_dr03TkSumPt->at(Theite)/pt;*/
