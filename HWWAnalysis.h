@@ -138,8 +138,11 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
   virtual float congPhi(float );
   virtual bool  passPreCuts(float, int, float, float, float,float);
   virtual bool  passIPcuts(float, float);
-  virtual  bool passMissItCons(bool , int );
-  virtual  bool FOnoIso(float , int , float , float , float ,float ,float , float ,bool , int );
+    virtual bool  FOnoDeta(float , int , float ,float ,float ,float , float ,bool , int , float , float , float );
+    virtual bool  FO_full(float, int, float,float, float,float,float, float,bool, int, float, float, float);
+
+    virtual  bool passMissItCons(bool , int );
+    virtual  bool FOnoIso(float , int , float , float , float ,float ,float , float ,bool , int );
     virtual void fillTheCLTree(int );
 
  // virtual bool isAGoodEvent(int, int);
@@ -205,7 +208,10 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     int isSameSign;
     int topSelection;
     int passFO_plus;
+    int passFO_noDeta;
+    int passFO_full;
     int topFO;
+
     
     //for testTree
     int isTriggering;

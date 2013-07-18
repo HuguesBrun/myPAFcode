@@ -159,7 +159,11 @@ void HWWAnalysis::Initialise() {
     theTree->Branch("topSelection",          &topSelection,          "topSelection/I");
     theTree->Branch("topFO",          &topFO,          "topFO/I");
     theTree->Branch("passFO_plus",          &passFO_plus,          "passFO_plus/I");
+    theTree->Branch("passFO_noDeta",          &passFO_noDeta,          "passFO_noDeta/I");
+    theTree->Branch("passFO_full",          &passFO_full,          "passFO_full/I");
 
+    
+    
     testTree = CreateTree("signalTree","treeWithTheSigEvents");
     testTree->Branch("pt",          &pt,          "pt/F");
   //  testTree->Branch("absEta",          &absEta,          "absEta/F");
@@ -196,6 +200,7 @@ void HWWAnalysis::Initialise() {
   //  testTree->Branch("myTightID", &myTightID, "myTightID/I");
   //  testTree->Branch("myTightIDiso", &myTightIDiso, "myTightIDiso/I");
     testTree->Branch("nbRecoVertex", &nbRecoVertex, "nbRecoVertex/I");
+    
     
   //  testTree->Branch("passFO_BDT_ISO",          &passFO_BDT_ISO,          "passFO_BDT_ISO/I");
 
@@ -477,7 +482,7 @@ void HWWAnalysis::InsideLoop() {
                passBDT_ISO = passBDT && passISO;
                tag_passISO = ((T_Elec_CombIsoHWW->at(i)/pt)<0.15);
                pair_passISO = tag_passISO && passISO;
-                passPreselec = passPreCuts(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j));
+               passPreselec = passPreCuts(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j));
                 passIP = passIPcuts( T_Elec_d0->at(j), T_Elec_dZ->at(j));
                passConvs = passMissItCons(T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j));
                passFOnoIso = FOnoIso(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j));
@@ -493,7 +498,9 @@ void HWWAnalysis::InsideLoop() {
                //cout << "pass? " << (T_Elec_MVAid_trig->at(j)>0.5) << " " << passConvs << " " << (the03RelIsolation<0.15) << " " << (T_Elec_d0->at(j)<0.04) << endl;
                topFO = (T_Elec_MVAid_trig->at(j)>-0.1)&&passConvs&&(the03RelIsolation<1.0)&&(T_Elec_d0->at(j)<0.1);
                passFO_plus = passFO && (the03RelIsolation<0.3);
-              isSameSign = (T_Elec_Charge->at(i)*T_Elec_Charge->at(j)==1 ? 1 : 0);
+               isSameSign = (T_Elec_Charge->at(i)*T_Elec_Charge->at(j)==1 ? 1 : 0);
+               passFO_noDeta = FOnoDeta(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j),T_Elec_dr03TkSumPt->at(j), T_Elec_dr03EcalSumEt->at(j), T_Elec_dr03HcalSumEt->at(j));
+               passFO_full = FO_full(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j),T_Elec_dr03TkSumPt->at(j), T_Elec_dr03EcalSumEt->at(j), T_Elec_dr03HcalSumEt->at(j));
               // fillTheCLTree(j);
 
                float pass=0;
@@ -1101,8 +1108,9 @@ float HWWAnalysis::calcPFRadIsoFonc(TLorentzVector *theElec,float deltaRmax, flo
   //  cout << "ptInCone=" << ptInCone << endl;
     return ptInCone;
     }
-    else return -1;
 #endif
+
+     return -1;
 }
 
 
@@ -1213,6 +1221,57 @@ bool HWWAnalysis::FOnoIso(float myPt, int isEB, float theSigIeta, float deltaEta
     
 }
 
+bool HWWAnalysis::FOnoDeta(float myPt, int isEB, float theSigIeta,float deltaPhiSC,float HOE,float d0, float dz,bool conversion, int nMissHit, float isoTrack, float isoECAL, float isoHCAL)
+{
+    
+    if (isEB) {
+        if (theSigIeta                               > 0.01)  return false;
+        if (fabs(deltaPhiSC)        > 0.15)  return false;
+        if (HOE                              > 0.12)  return false;
+        if ((isoECAL-1)/myPt>0.2) return false;
+    } else {
+        if (theSigIeta                               > 0.03)  return false;
+        if (fabs(deltaPhiSC)        > 0.10)  return false;
+        if (HOE                              > 0.10)  return false;
+        if ((isoECAL)/myPt>0.2) return false;
+
+    }
+    if (isoTrack/myPt>0.2) return false;
+    if (isoHCAL/myPt>0.2) return false;
+    if (d0 > 0.02)                                  return false;
+    if (dz > 0.1)                                   return false;
+    if (nMissHit > 0)      return false;
+    if (conversion)           return false;
+    return true;
+    
+}
+
+bool HWWAnalysis::FO_full(float myPt, int isEB, float theSigIeta,float deltaEtaSC, float deltaPhiSC,float HOE,float d0, float dz,bool conversion, int nMissHit, float isoTrack, float isoECAL, float isoHCAL)
+{
+    
+    if (isEB) {
+        if (theSigIeta                               > 0.01)  return false;
+        if (fabs(deltaPhiSC)        > 0.15)  return false;
+        if (fabs(deltaEtaSC)        > 0.007) return false;
+        if (HOE                              > 0.12)  return false;
+        if ((isoECAL-1)/myPt>0.2) return false;
+    } else {
+        if (theSigIeta                               > 0.03)  return false;
+        if (fabs(deltaPhiSC)        > 0.10)  return false;
+        if (fabs(deltaEtaSC)        > 0.009) return false;
+        if (HOE                              > 0.10)  return false;
+        if ((isoECAL)/myPt>0.2) return false;
+        
+    }
+    if (isoTrack/myPt>0.2) return false;
+    if (isoHCAL/myPt>0.2) return false;
+    if (d0 > 0.02)                                  return false;
+    if (dz > 0.1)                                   return false;
+    if (nMissHit > 0)      return false;
+    if (conversion)           return false;
+    return true;
+    
+}
 
 bool HWWAnalysis::passIPcuts(float d0, float dz)
 {
