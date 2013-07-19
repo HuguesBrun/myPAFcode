@@ -41,6 +41,8 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
         TIGHT
   };
     
+    
+  enum RunRange {RunAB, RunC, RunD};
  enum PFisolationType {
         neutralHadron,
         chargedHadron,
@@ -144,11 +146,14 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     virtual  bool passMissItCons(bool , int );
     virtual  bool FOnoIso(float , int , float , float , float ,float ,float , float ,bool , int );
     virtual void fillTheCLTree(int );
+    virtual float correctForNoise(float , bool , HWWAnalysis::RunRange , bool );
+    virtual float correctForHLTDefinition(float iso, bool isBarrel, HWWAnalysis::RunRange runRange);
+
 
  // virtual bool isAGoodEvent(int, int);
 
 
-
+    RunRange runRange;
 
     
     bool isMC;
@@ -210,6 +215,9 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     int passFO_plus;
     int passFO_noDeta;
     int passFO_full;
+    int passFO_full_HLT;
+    int passFO_full_HLT_noise;
+    int passFO_full_noise;
     int topFO;
 
     
@@ -347,6 +355,9 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     
     // the detIsos
     float CL_isoECAL;
+    float CL_isoECAL_HLT;
+    float CL_isoECAL_noise;
+    float CL_isoECAL_HLT_noise;
     float CL_isoHCAL;
     float CL_isoTracker;
 

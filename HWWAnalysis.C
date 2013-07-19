@@ -161,6 +161,9 @@ void HWWAnalysis::Initialise() {
     theTree->Branch("passFO_plus",          &passFO_plus,          "passFO_plus/I");
     theTree->Branch("passFO_noDeta",          &passFO_noDeta,          "passFO_noDeta/I");
     theTree->Branch("passFO_full",          &passFO_full,          "passFO_full/I");
+    theTree->Branch("passFO_full_HLT",          &passFO_full_HLT,          "passFO_full_HLT/I");
+    theTree->Branch("passFO_full_HLT_noise",          &passFO_full_HLT_noise,          "passFO_full_HLT_noise/I");
+    theTree->Branch("passFO_full_noise",          &passFO_full_noise,          "passFO_full_noise/I");
 
     
     
@@ -301,6 +304,9 @@ void HWWAnalysis::Initialise() {
     treeClusterShape->Branch("CL_isEcalDriven", &CL_isEcalDriven, "CL_isEcalDriven/F");
     treeClusterShape->Branch("CL_hnHits", &CL_hnHits, "CL_hnHits/F");
     treeClusterShape->Branch("CL_isoECAL", &CL_isoECAL, "CL_isoECAL/F");
+    treeClusterShape->Branch("CL_isoECAL_HLT", &CL_isoECAL_HLT, "CL_isoECAL_HLT/F");
+    treeClusterShape->Branch("CL_isoECAL_noise", &CL_isoECAL_noise, "CL_isoECAL_noise/F");
+    treeClusterShape->Branch("CL_isoECAL_HLT_noise", &CL_isoECAL_HLT_noise, "CL_isoECAL_HLT_noise/F");
     treeClusterShape->Branch("CL_isoHCAL", &CL_isoHCAL, "CL_isoHCAL/F");
     treeClusterShape->Branch("CL_isoTracker", &CL_isoTracker, "CL_isoTracker/F");
     treeClusterShape->Branch("CL_isoECALRelat", &CL_isoECALRelat, "CL_isoECALRelat/F");
@@ -313,8 +319,11 @@ void HWWAnalysis::Initialise() {
     treeClusterShape->Branch("CL_nonTrigMVA", &CL_nonTrigMVA, "CL_nonTrigMVA/F");
     treeClusterShape->Branch("CL_PFchargedIso", &CL_PFchargedIso, "CL_PFchargedIso/F");
     treeClusterShape->Branch("CL_POGcombIso", &CL_POGcombIso, "CL_POGcombIso/F");
-    treeClusterShape->Branch("CL_POGcombIso", &CL_POGcombIso, "CL_POGcombIso/F");
     treeClusterShape->Branch("weight",&weight,"weight/F");
+    treeClusterShape->Branch("weight_runAB_Rdep",&weight_runAB_Rdep,"weight_runAB_Rdep/F");
+    treeClusterShape->Branch("weight_runC_Rdep",&weight_runC_Rdep,"weight_runC_Rdep/F");
+    treeClusterShape->Branch("weight_runD_Rdep",&weight_runD_Rdep,"weight_runD_Rdep/F");
+
 
 
 
@@ -337,6 +346,11 @@ void HWWAnalysis::InsideLoop() {
    // if (!(isAGoodEvent(T_Event_RunNumber, T_Event_LuminosityBlock))) return;
 
     runNumber = T_Event_RunNumber;
+    // check the run range :
+    if (runNumber <= 203755 && runNumber > 197770)
+        runRange = RunC;
+    else if (runNumber > 203755)
+        runRange = RunD;
     lumiSec = T_Event_LuminosityBlock;
     eventNumber = T_Event_EventNumber;
     TLorentzVector* elecTag;
@@ -501,7 +515,15 @@ void HWWAnalysis::InsideLoop() {
                isSameSign = (T_Elec_Charge->at(i)*T_Elec_Charge->at(j)==1 ? 1 : 0);
                passFO_noDeta = FOnoDeta(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j),T_Elec_dr03TkSumPt->at(j), T_Elec_dr03EcalSumEt->at(j), T_Elec_dr03HcalSumEt->at(j));
                passFO_full = FO_full(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j),T_Elec_dr03TkSumPt->at(j), T_Elec_dr03EcalSumEt->at(j), T_Elec_dr03HcalSumEt->at(j));
-              // fillTheCLTree(j);
+               CL_isoECAL_HLT = correctForHLTDefinition(T_Elec_dr03EcalSumEt->at(j), T_Elec_isEB->at(j), runRange);
+               passFO_full_HLT = FO_full(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j),T_Elec_dr03TkSumPt->at(j), CL_isoECAL_HLT, T_Elec_dr03HcalSumEt->at(j));
+               CL_isoECAL_noise = ( isMC ? correctForNoise(T_Elec_dr03EcalSumEt->at(j), T_Elec_isEB->at(j), runRange, false) :  T_Elec_dr03EcalSumEt->at(j));
+               passFO_full_noise = FO_full(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j),T_Elec_dr03TkSumPt->at(j), CL_isoECAL_noise, T_Elec_dr03HcalSumEt->at(j));
+               CL_isoECAL_HLT_noise = ( isMC ? correctForNoise(CL_isoECAL_HLT, T_Elec_isEB->at(j), runRange, false) :  CL_isoECAL_HLT);
+               passFO_full_HLT_noise = FO_full(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j),T_Elec_dr03TkSumPt->at(j), CL_isoECAL_HLT_noise, T_Elec_dr03HcalSumEt->at(j));
+
+               
+               fillTheCLTree(j);
 
                float pass=0;
                //if (passTight==1 && T_Elec_passTight->at(j)==1) pass=1;
@@ -555,9 +577,9 @@ void HWWAnalysis::compWeights(int nbVtx){
     float runAsingleweights[50] = {0.0556421, 0.131913, 0.245752, 0.403764, 0.641765, 0.958889, 1.33926, 1.78689, 2.23844, 2.62731, 2.9303, 3.07544, 3.07365, 2.92522, 2.67165, 2.34206, 1.97036, 1.60524, 1.26312, 0.959508, 0.704922, 0.503016, 0.346199, 0.231395, 0.149965, 0.0943136, 0.057754, 0.034332, 0.0198652, 0.011222, 0.00617867, 0.00334219, 0.00176676, 0.000909211, 0.000461103, 0.000228939, 0.00011173, 5.37535e-05, 2.53839e-05, 1.1742e-05, 5.35913e-06, 2.4203e-06, 1.07307e-06, 4.67931e-07, 2.01209e-07, 8.55278e-08, 3.59175e-08, 1.47683e-08, 6.06217e-09, 2.4572e-09};
     float runDsingleweights[50] = {0.0734205, 0.166531, 0.298051, 0.472309, 0.726821, 1.05524, 1.43715, 1.87606, 2.30684, 2.66601, 2.93663, 3.05277, 3.0305, 2.87258, 2.61995, 2.29942, 1.94154, 1.59134, 1.2627, 0.969442, 0.721415, 0.522547, 0.365825, 0.24922, 0.164952, 0.106148, 0.0666358, 0.0406822, 0.0242188, 0.0141006, 0.00801517, 0.00448351, 0.00245493, 0.00131066, 0.000690659, 0.00035685, 0.000181502, 9.11369e-05, 4.49824e-05, 2.17787e-05, 1.0418e-05, 4.9379e-06, 2.30068e-06, 1.05567e-06, 4.78258e-07, 2.14453e-07, 9.51201e-08, 4.1358e-08, 1.79734e-08, 7.72183e-09};
     float allHCPdataset[50] = {0.430197, 0.55548, 0.652449, 0.725975, 0.825586, 0.926318, 1.01602, 1.11065, 1.18723, 1.23701, 1.27325, 1.28168, 1.27676, 1.25874, 1.23778, 1.21416, 1.18747, 1.16768, 1.15034, 1.13333, 1.11695, 1.10396, 1.08458, 1.06439, 1.03981, 1.01008, 0.977264, 0.937321, 0.89226, 0.844345, 0.791948, 0.74129, 0.688104, 0.63042, 0.576587, 0.522621, 0.471031, 0.42311, 0.376965, 0.332277, 0.291743, 0.25579, 0.222104, 0.19129, 0.163786, 0.139728, 0.118671, 0.0994171, 0.0837516, 0.070164};
-    float runABdepweights[50] = {0.430197, 0.55548, 0.652449, 0.725975, 0.825586, 0.926318, 1.01602, 1.11065, 1.18723, 1.23701, 1.27325, 1.28168, 1.27676, 1.25874, 1.23778, 1.21416, 1.18747, 1.16768, 1.15034, 1.13333, 1.11695, 1.10396, 1.08458, 1.06439, 1.03981, 1.01008, 0.977264, 0.937321, 0.89226, 0.844345, 0.791948, 0.74129, 0.688104, 0.63042, 0.576587, 0.522621, 0.471031, 0.42311, 0.376965, 0.332277, 0.291743, 0.25579, 0.222104, 0.19129, 0.163786, 0.139728, 0.118671, 0.0994171, 0.0837516, 0.070164};
-    float runCdepweights[50] = {0.430197, 0.55548, 0.652449, 0.725975, 0.825586, 0.926318, 1.01602, 1.11065, 1.18723, 1.23701, 1.27325, 1.28168, 1.27676, 1.25874, 1.23778, 1.21416, 1.18747, 1.16768, 1.15034, 1.13333, 1.11695, 1.10396, 1.08458, 1.06439, 1.03981, 1.01008, 0.977264, 0.937321, 0.89226, 0.844345, 0.791948, 0.74129, 0.688104, 0.63042, 0.576587, 0.522621, 0.471031, 0.42311, 0.376965, 0.332277, 0.291743, 0.25579, 0.222104, 0.19129, 0.163786, 0.139728, 0.118671, 0.0994171, 0.0837516, 0.070164};
-    float runDdepweights[50] = {0.430197, 0.55548, 0.652449, 0.725975, 0.825586, 0.926318, 1.01602, 1.11065, 1.18723, 1.23701, 1.27325, 1.28168, 1.27676, 1.25874, 1.23778, 1.21416, 1.18747, 1.16768, 1.15034, 1.13333, 1.11695, 1.10396, 1.08458, 1.06439, 1.03981, 1.01008, 0.977264, 0.937321, 0.89226, 0.844345, 0.791948, 0.74129, 0.688104, 0.63042, 0.576587, 0.522621, 0.471031, 0.42311, 0.376965, 0.332277, 0.291743, 0.25579, 0.222104, 0.19129, 0.163786, 0.139728, 0.118671, 0.0994171, 0.0837516, 0.070164};
+    float runABdepweights[50] = {0.77022, 0.843523, 0.891891, 0.893246, 0.919305, 0.929639, 0.950074, 0.970932, 0.989393, 1.0028, 1.01827, 1.03193, 1.04244, 1.0513, 1.05582, 1.05625, 1.05521, 1.05032, 1.03943, 1.02867, 1.02087, 1.00251, 0.991581, 0.976146, 0.965407, 0.952374, 0.941688, 0.931425, 0.91982, 0.909328, 0.906944, 0.897425, 0.891004, 0.893061, 0.883045, 0.877662, 0.882831, 0.866619, 0.869468, 0.868128, 0.88265, 0.86161, 0.870878, 0.872897, 0.852069, 0.842914, 0.827259, 0.848328, 0.939103, 0.846945};
+    float runCdepweights[50] = {1.4987, 1.04204, 1.00905, 1.00176, 0.951717, 0.93894, 0.902596, 0.865293, 0.843572, 0.820859, 0.806636, 0.80183, 0.803038, 0.810091, 0.824186, 0.845319, 0.870896, 0.90333, 0.938042, 0.972746, 1.00788, 1.05018, 1.08913, 1.13031, 1.16901, 1.21099, 1.25337, 1.31263, 1.36649, 1.42293, 1.49926, 1.56219, 1.65738, 1.76501, 1.86679, 2.00914, 2.13187, 2.31103, 2.52409, 2.72435, 2.91485, 3.34987, 3.68791, 3.85945, 4.10761, 4.97999, 5.34625, 6.08322, 6.2876, 7.92236};
+    float runDdepweights[50] = {1.17064, 0.873625, 0.994629, 0.979049, 1.00278, 0.987356, 0.998856, 0.993764, 0.998742, 0.997397, 1.00171, 1.00282, 1.00441, 1.00131, 1.00406, 1.00387, 1.00622, 1.00402, 1.00368, 1.00214, 0.999609, 0.99956, 0.999178, 1.001, 0.998697, 0.996203, 0.997745, 0.999822, 0.996777, 0.993237, 0.996773, 0.996064, 0.993838, 0.996792, 0.993596, 0.993074, 0.996673, 0.997009, 0.994586, 0.999058, 1.00096, 1.00231, 0.98772, 0.998773, 0.998693, 1.0007, 1.00449, 0.966705, 0.989971, 0.983189};
     weight =  allHCPdataset[nbVtx-1];
     weight_runA = runAweights[nbVtx-1];
     weight_runB = runBweights[nbVtx-1];
@@ -1328,6 +1350,61 @@ void HWWAnalysis::fillTheCLTree(int Theite){
     treeClusterShape->Fill();
     
     
+}
+
+
+float HWWAnalysis::correctForNoise(float iso, bool isBarrel, HWWAnalysis::RunRange runRange, bool isData) {
+    
+    float result = iso;
+    
+        if (!isData) {
+            if (runRange == RunAB) {
+                if (!isBarrel)
+                    result = (iso-0.2827)/1.0949;
+                else
+                    result = (iso-0.0931)/1.0738;
+            } else if (runRange == RunC) {
+                if (!isBarrel)
+                    result = (iso-0.5690)/0.9217;
+                else
+                    result = (iso-0.1824)/0.9279;
+            } else if (runRange == RunD) {
+                if (!isBarrel)
+                    result = (iso-0.9997)/0.8781;
+                else
+                    result = (iso-0.0944)/0.8140;
+            }
+        } else {
+            std::cout << "Warning: you should correct MC to data" << std::endl;
+        }
+
+    
+    return result;
+}
+
+float HWWAnalysis::correctForHLTDefinition(float iso, bool isBarrel, HWWAnalysis::RunRange runRange) {
+    
+    float result = iso;
+    
+        if (runRange == RunAB) {
+            if (!isBarrel)
+                result = iso*0.8499-0.6510;
+            else
+                result = iso*0.8504-0.5658;
+        } else if (runRange == RunC) {
+            if (!isBarrel)
+                result = iso*0.9346-0.9987;
+            else
+                result = iso*0.8529-0.6816;
+        } else if (runRange == RunD) {
+            if (!isBarrel)
+                result = iso*0.8318-0.9999;
+            else
+                result = iso*0.8853-0.8783;
+        }
+
+    
+    return result;
 }
 
 void HWWAnalysis::Summary() {
