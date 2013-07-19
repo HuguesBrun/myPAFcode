@@ -164,6 +164,7 @@ void HWWAnalysis::Initialise() {
     theTree->Branch("passFO_full_HLT",          &passFO_full_HLT,          "passFO_full_HLT/I");
     theTree->Branch("passFO_full_HLT_noise",          &passFO_full_HLT_noise,          "passFO_full_HLT_noise/I");
     theTree->Branch("passFO_full_noise",          &passFO_full_noise,          "passFO_full_noise/I");
+    theTree->Branch("passDeltaEta",          &passDeltaEta,          "passDeltaEta/I");
 
     
     
@@ -521,7 +522,7 @@ void HWWAnalysis::InsideLoop() {
                passFO_full_noise = FO_full(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j),T_Elec_dr03TkSumPt->at(j), CL_isoECAL_noise, T_Elec_dr03HcalSumEt->at(j));
                CL_isoECAL_HLT_noise = ( isMC ? correctForNoise(CL_isoECAL_HLT, T_Elec_isEB->at(j), runRange, false) :  CL_isoECAL_HLT);
                passFO_full_HLT_noise = FO_full(T_Elec_Pt->at(j), T_Elec_isEB->at(j), T_Elec_sigmaIetaIeta->at(j), T_Elec_deltaEtaIn->at(j), T_Elec_deltaPhiIn->at(j) ,T_Elec_HtoE->at(j),T_Elec_d0->at(j), T_Elec_dZ->at(j), T_Elec_passConversionVeto->at(j), T_Elec_nHits->at(j),T_Elec_dr03TkSumPt->at(j), CL_isoECAL_HLT_noise, T_Elec_dr03HcalSumEt->at(j));
-
+               passDeltaEta = (T_Elec_isEB->at(j)==1 ? (T_Elec_deltaEtaIn->at(j)<0.007) :  (T_Elec_deltaEtaIn->at(j)<0.009));
                
                fillTheCLTree(j);
 

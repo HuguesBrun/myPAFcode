@@ -218,6 +218,7 @@ class HWWAnalysis: public CMSAnalysisSelectorMiniTrees {
     int passFO_full_HLT;
     int passFO_full_HLT_noise;
     int passFO_full_noise;
+    int passDeltaEta;
     int topFO;
 
     
